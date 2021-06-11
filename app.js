@@ -3,28 +3,42 @@ const express = require('express');
 const app = express();
 const User = require('./models/user')
 const mongoose = require('mongoose');
+const session = require('express-session');
+const MongoDBStore = require('connect-mongodb-session')(session)
 app.set('view engine', 'ejs');
 app.set('views', 'views');
+const MONGODB_URI = 'mongodb+srv://Jonathan:zftubW2CTITX9ga5@cluster0.a2aqy.mongodb.net/shop'
+const store = new MongoDBStore({
+    uri: MONGODB_URI,
+    collection: 'sessions'
+
+})
 const adminRoute = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
+const authRoute = require('./routes/auth');
 const errorRoute = require('./controllers/error')
 
 app.use(express.urlencoded({extended: false}));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(session({secret: 'my secret', resave: false, saveUninitialized: false, store: store}));
+
 app.use((req, res, next) => {
-    User.findById("60bf7d29a9244835a0a8eff1")
+    if (!req.session.user) {
+        return next();
+    }
+    User.findById(req.session.user._id)
         .then(user => {
-            req.user = user
+            req.user = user;
             next();
-        }).catch(err => {
-        console.log(err);
-    });
-})
+        })
+        .catch(err => console.log(err));
+});
 app.use('/admin', adminRoute);
 app.use(shopRoutes);
+app.use(authRoute);
 
 app.use(errorRoute.showErrors);
-mongoose.connect('mongodb+srv://Jonathan:zftubW2CTITX9ga5@cluster0.a2aqy.mongodb.net/shop?retryWrites=true&w=majority')
+mongoose.connect(MONGODB_URI)
     .then(result => {
         User.findOne().then(user => {
             if (!user) {
