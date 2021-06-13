@@ -2,10 +2,16 @@ const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 
 exports.getLogin = async (req, res, next) => {
+    let message = await req.consumeFlash('error')
+    if(message.length >0 ){
+        message = message[0]
+    }else{
+        message = null
+    }
     res.render('auth/login', {
         path: '/login',
         pageTitle: 'Login',
-        errorMessage: await req.consumeFlash('error')
+        errorMessage: message
     });
 };
 
@@ -15,8 +21,10 @@ exports.postLogin = (req, res, next) => {
     User.findOne({email: email},)
         .then(user => {
             if (!user) {
-                req.session.flash('error', 'Invalid email or password');
-                return res.redirect('/login')
+                req.flash('error', 'Invalid email or password');
+                return req.session.save(err => {
+                    res.redirect('/login');
+                });
             }
             bcrypt.compare(password, user.password).then(doMatch => {
                 if (doMatch) {
@@ -27,8 +35,12 @@ exports.postLogin = (req, res, next) => {
                         res.redirect('/')
                     });
                 }
-                req.session.flash('error', 'Invalid email or password');
-                res.redirect('/login')
+                req.flash('error', 'Invalid email or password');
+                req.session.save((err) => {
+                    res.redirect('/login')
+                })
+
+
             }).catch(err => {
                 console.log(err)
                 res.redirect('/login')
@@ -51,6 +63,7 @@ exports.postSignup = (req, res, next) => {
     const confirmPassword = req.body.confirmPassword;
     User.findOne({email: email}).then(userDoc => {
             if (userDoc) {
+                req.flash('error','Email already exists')
                 return res.redirect('/signup');
             }
             return bcrypt.hash(password, 12)
@@ -72,9 +85,16 @@ exports.postSignup = (req, res, next) => {
     })
 }
 
-exports.getSignup = (req, res, next) => {
+exports.getSignup = async (req, res, next) => {
+    let message = await req.consumeFlash('error')
+    if(message.length >0 ){
+        message = message[0]
+    }else{
+        message = null
+    }
     res.render('auth/signup', {
         path: '/signup',
         pageTitle: 'Signup',
+        errorMessage:message
     })
 }

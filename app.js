@@ -52,7 +52,7 @@ app.use(shopRoutes);
 app.use(authRoute);
 
 app.use(errorRoute.showErrors);
-mongoose.connect(MONGODB_URI)
+mongoose.connect(MONGODB_URI,{ useNewUrlParser: true, useUnifiedTopology: true })
     .then(result => {
         // User.findOne().then(user => {
         //     if (!user) {
