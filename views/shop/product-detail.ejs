@@ -6,11 +6,13 @@
 <main class="centered">
     <h1><%= product.title %></h1>
     <hr>
-    <div>
-        <img src="<%= product.imageUrl %>" alt="<%= product.title %>">
+    <div class="image">
+        <img src="https://www.duniadosen.com/wp-content/uploads/2020/11/stack-various-books-table-scaled-e1617270355396.jpg">
     </div>
     <h2><%= product.price %></h2>
     <p><%= product.description %></p>
-<%- include('../includes/add-to-cart.ejs')%>
+    <% if (isAuthenticated) { %>
+        <%- include('../includes/add-to-cart.ejs', {product: product}) %>
+    <% } %>
 </main>
 <%- include('../includes/end.ejs') %>
